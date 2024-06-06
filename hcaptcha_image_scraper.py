@@ -1,4 +1,3 @@
-from PIL import Image
 import os
 import cv2
 import numpy as np
@@ -10,7 +9,6 @@ import hashlib
 import math
 import datetime
 import os
-import itertools
 
 def c(host, sitekey):
     try:
@@ -112,61 +110,6 @@ def n(req):
     ])
     return hsl
 
-class ImageProcessor:
-    def __init__(self, folder):
-        self.folder = folder
-
-    def split_image(self, image_path, num_rows, num_cols):
-        image = Image.open(image_path)
-        width, height = image.size
-        crop_width = width // num_cols
-        crop_height = height // num_rows
-        cropped_images = []
-
-        for i, (row, col) in enumerate(itertools.product(range(num_rows), range(num_cols))):
-            if i+1 in {7, 8, 9}:
-                continue
-            left = col * crop_width
-            top = row * crop_height
-            right = left + crop_width
-            bottom = top + crop_height
-            cropped_image = image.crop((left, top, right, bottom))
-            cropped_images.append(cropped_image)
-
-        return cropped_images
-
-    def resize_image(self, image, scale_factor):
-        width = int(image.width * scale_factor)
-        height = int(image.height * scale_factor)
-        resized_image = image.resize((width, height))
-        return resized_image
-
-    def process_images_in_folders(self):
-        subfolders = [os.path.join(self.folder, dir) for dir in os.listdir(self.folder) if os.path.isdir(os.path.join(self.folder, dir))]
-        print("Folders inside /hcaptcha:")
-        for i, subfolder in enumerate(subfolders):
-            print(f"{i+1}. {os.path.basename(subfolder)}")
-        selected_folders = input("Enter the folders you want to process: ")
-        selected_folders = [subfolders[int(folder)-1].strip() for folder in selected_folders.split(",")]
-
-        for selected_folder in selected_folders:
-            for root, dirs, files in os.walk(selected_folder):
-                for filename in files:
-                    if filename.endswith(('.png', '.jpg', '.jpeg')):
-                        image_path = os.path.join(root, filename)
-                        print(f"Processing image: {image_path}")
-                        cropped_images = self.split_image(image_path, 3, 5)
-                        print(f"Cropped image into {len(cropped_images)} pieces")
-                        resized_images = []
-
-                        for i, cropped_image in enumerate(cropped_images):
-                            resized_image = self.resize_image(cropped_image, 10.0)
-                            resized_images.append(resized_image)
-                            output_folder = os.path.join(os.path.dirname(__file__), "images")
-                            os.makedirs(output_folder, exist_ok=True)
-                            output_path = os.path.join(output_folder, f"{os.path.splitext(filename)[0]}_resized_{i+1}.jpg")
-                            resized_image.save(output_path)
-
 class HcaptchaImagesDownloader:
     def __init__(self, host, sitekey, number):
         self.host = host
@@ -251,10 +194,6 @@ class HcaptchaImagesDownloader:
             print(f"Downloaded {self.counter} images")
         if self.counter == number:
             print("All images downloaded")
-            folder = "./hcaptcha"
-            processor = ImageProcessor(folder)
-            processor.process_images_in_folders()
-            print("Images processed")
             exit()
 
 if __name__ == '__main__':
