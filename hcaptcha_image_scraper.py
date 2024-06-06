@@ -10,6 +10,7 @@ import hashlib
 import math
 import datetime
 import os
+import itertools
 
 def c(host, sitekey):
     try:
@@ -31,7 +32,7 @@ def c(host, sitekey):
                 "Accept-Language": "en-US,en;q=0.9",
             },
         )
-        r.raise_for_status()  # Raise an HTTPError for bad responses
+        r.raise_for_status()
         return r.json()["c"]
     except requests.RequestException as e:
         print(f"Error during c() request: {e}")
@@ -122,14 +123,15 @@ class ImageProcessor:
         crop_height = height // num_rows
         cropped_images = []
 
-        for row in range(num_rows):
-            for col in range(num_cols):
-                left = col * crop_width
-                top = row * crop_height
-                right = left + crop_width
-                bottom = top + crop_height
-                cropped_image = image.crop((left, top, right, bottom))
-                cropped_images.append(cropped_image)
+        for i, (row, col) in enumerate(itertools.product(range(num_rows), range(num_cols))):
+            if i+1 in {7, 8, 9}:
+                continue
+            left = col * crop_width
+            top = row * crop_height
+            right = left + crop_width
+            bottom = top + crop_height
+            cropped_image = image.crop((left, top, right, bottom))
+            cropped_images.append(cropped_image)
 
         return cropped_images
 
@@ -179,10 +181,10 @@ class HcaptchaImagesDownloader:
         self.c['type'] = 'hsl'
 
         self.res = self.get_captcha()
-        if self.res is not None:
+        if self.res is not None and 'requester_question' in self.res:
             question = self.res['requester_question']['en']
         else:
-            print("No response")
+            print("No response or requester question not found")
             return None
 
         self.currentquestion = question
@@ -245,6 +247,8 @@ class HcaptchaImagesDownloader:
         cv2.imwrite(os.path.join(folder, 'image_' +
                     str(self.counter) + '.png'), image)
         self.counter += 1
+        if self.counter % 50 == 0:
+            print(f"Downloaded {self.counter} images")
         if self.counter == number:
             print("All images downloaded")
             folder = "./hcaptcha"
