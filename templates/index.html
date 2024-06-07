@@ -4,10 +4,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Auto Labeling and Training</title>
+    <title>hcaptcha training of ai</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Rubik', sans-serif;
             margin: 0;
             padding: 20px;
         }
@@ -69,10 +69,10 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            background-color: #f44336;
+            background-color: #1c40e0;
             color: white;
             padding: 15px;
-            border-radius: 5px;
+            border-radius: 15px;
             display: none;
         }
 
@@ -84,9 +84,20 @@
 
 <body>
     <div class="wrapper">
-        <h1>Scrape HCaptcha Images</h1>
+        <h1>hcaptcha training of ai</h1>
         <form action="/start_scraping" method="post">
             <button type="submit">Start Scraping</button>
+        </form>
+
+        <h1>Train model</h1>
+        <form action="/train_model" method="post">
+            <select style="border-radius: 15px; border: 1px solid black;" name="options" name="nigga">
+                {% for option in options %}
+                <option value="{{ option }}">{{ option }}</option>
+                {% endfor %}
+            </select>
+            <input style="width: 588px; border-radius: 15px; border: 1px solid black; padding-left: 5px;" type="text" name="classes" placeholder="Enter label">
+            <button type="submit">Submit</button>
         </form>
         <div class="alert" id="alertBox">{{ alert }}</div>
     </div>
