@@ -22,6 +22,7 @@ def upload_images_to_s3(images, username, repository):
 
     files = [os.path.basename(image) for image in images]
     body = json.dumps({"files": files })
+    body = json.dumps({"files": files })
 
     response = requests.post(upload_url, headers=headers, data=body)
     response_json = response.json()
@@ -42,6 +43,10 @@ def upload_images_to_s3(images, username, repository):
         "sec-gpc": "1"
     }
 
+    for s3_url_index in range(len(s3_urls)):
+        with open(images[s3_url_index], 'rb') as file:
+            file_content = file.read()
+        requests.put(s3_urls[s3_url_index], headers=upload_headers, data=file_content)
     for s3_url_index in range(len(s3_urls)):
         with open(images[s3_url_index], 'rb') as file:
             file_content = file.read()
