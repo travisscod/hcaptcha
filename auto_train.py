@@ -2,12 +2,10 @@ import requests
 import json
 import re
 import os
+import time
 
-def extract_letters(response_content):
-    return re.sub(r'[^a-zA-Z]', ' ', response_content).strip()
-
-def upload_images_to_s3(images):
-    upload_url = "https://fqk4k22rqc.execute-api.us-east-1.amazonaws.com/alfred/hcaptcha/dataset/upload/s3"
+def upload_images_to_s3(images, username, repository):
+    upload_url = f"https://fqk4k22rqc.execute-api.us-east-1.amazonaws.com/{username}/{repository}/dataset/upload/s3"
     headers = {
         "accept": "application/json, text/plain, */*",
         "accept-language": "en-US,en;q=0.9",
@@ -23,10 +21,11 @@ def upload_images_to_s3(images):
     }
 
     files = [os.path.basename(image) for image in images]
-    body = json.dumps({"files": files * 2})
+    body = json.dumps({"files": files })
 
     response = requests.post(upload_url, headers=headers, data=body)
     response_json = response.json()
+    
     s3_urls = response_json["presigned_urls"]
     upload_id = response_json["upload_id"]
 
@@ -43,18 +42,17 @@ def upload_images_to_s3(images):
         "sec-gpc": "1"
     }
 
-    for s3_url in s3_urls:
-        for image in images:
-            with open(image, 'rb') as file:
-                file_content = file.read()
-            requests.put(s3_url, headers=upload_headers, data=file_content)
+    for s3_url_index in range(len(s3_urls)):
+        with open(images[s3_url_index], 'rb') as file:
+            file_content = file.read()
+        requests.put(s3_urls[s3_url_index], headers=upload_headers, data=file_content)
 
-    merge_url = "https://fqk4k22rqc.execute-api.us-east-1.amazonaws.com/alfred/hcaptcha/dataset/upload/merge"
+    merge_url = f"https://fqk4k22rqc.execute-api.us-east-1.amazonaws.com/{username}/{repository}/dataset/upload/merge"
     merge_headers = {"upload_id": upload_id}
     return requests.get(merge_url, headers=merge_headers)
 
-def upload_classes(classes):
-    url = "https://fqk4k22rqc.execute-api.us-east-1.amazonaws.com/alfred/hcaptcha/dataset/classes"
+def upload_classes(classes, username, repository):
+    url = f"https://fqk4k22rqc.execute-api.us-east-1.amazonaws.com/{username}/{repository}/dataset/classes"
     headers = {
         "accept": "application/json, text/plain, */*",
         "accept-language": "en-US,en;q=0.9",
@@ -68,11 +66,11 @@ def upload_classes(classes):
         "sec-fetch-site": "cross-site",
         "sec-gpc": "1"
     }
-    r = requests.get(url, headers=headers)  # Use GET to match fetch
+    r = requests.get(url, headers=headers)
     print(r.text)
 
-def get_classes():
-    url = "https://fqk4k22rqc.execute-api.us-east-1.amazonaws.com/alfred/hcaptcha"
+def get_classes(username, repository):
+    url = f"https://fqk4k22rqc.execute-api.us-east-1.amazonaws.com/{username}/{repository}"
     headers = {
         "accept": "application/json, text/plain, */*",
         "accept-language": "en-US,en;q=0.9",
@@ -100,8 +98,8 @@ def get_classes():
     else:
         raise ValueError("Unexpected JSON structure: not a list or empty list")
 
-def get_images():
-    url = "https://fqk4k22rqc.execute-api.us-east-1.amazonaws.com/alfred/hcaptcha/dataset/view"
+def get_images(username, repository):
+    url = f"https://fqk4k22rqc.execute-api.us-east-1.amazonaws.com/{username}/{repository}/dataset/view"
     headers = {
         "accept": "application/json, text/plain, */*",
         "accept-language": "en-US,en;q=0.9",
@@ -119,28 +117,8 @@ def get_images():
     response = requests.get(url, headers=headers)
     return response.json()["files_names"]
 
-def get_chatgpt_response(class_name):
-    url = "https://api.openai.com/v1/chat/completions"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer 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"
-    }
-    data = {
-        "model": "gpt-3.5-turbo",
-        "messages": [
-            {"role": "user", "content": f"Give me a 7-10 word highly accurate description of this object, dont use any weird words, keep the description simple: {class_name}"}
-        ]
-    }
-    response = requests.post(url, headers=headers, json=data)
-    response_data = response.json()
-    if 'choices' in response_data and response_data['choices']:
-        content = response_data["choices"][0]["message"]["content"].strip().lower()
-        return extract_letters(content)
-    else:
-        return "No response found."
-
-def auto_label():
-    url = "https://fqk4k22rqc.execute-api.us-east-1.amazonaws.com/alfred/hcaptcha/dataset/autolabel"
+def auto_label(username, repository):
+    url = f"https://fqk4k22rqc.execute-api.us-east-1.amazonaws.com/{username}/{repository}/dataset/autolabel"
     headers = {
         "accept": "application/json, text/plain, */*",
         "accept-language": "en-US,en;q=0.9",
@@ -155,18 +133,44 @@ def auto_label():
         "sec-gpc": "1"
     }
 
-    descriptions = [get_chatgpt_response(class_name) for class_name in get_classes()]
 
     body = {
-        "images": "|".join(get_images()),
-        "classes": "|".join(descriptions)
+        "images": "|".join(get_images(username, repository)),
+        "classes": "|".join([class_name for class_name in get_classes(username, repository)])
     }
 
-    response = requests.post(url, headers=headers, json=body)
+    response_autolabel = requests.post(url, headers=headers, json=body)
+
+    return response_autolabel.json()
+            
+def auto_train(username, repository):
+    url = f"https://fqk4k22rqc.execute-api.us-east-1.amazonaws.com/{username}/{repository}/models/train" 
+    headers = {
+    "accept": "application/json, text/plain, */*",
+    "accept-language": "en-US,en;q=0.9",
+    "epochs": "10",
+    "model": "yolov8s",
+    "priority": "u=1, i",
+    "sec-ch-ua": "\"Google Chrome\";v=\"125\", \"Chromium\";v=\"125\", \"Not.A/Brand\";v=\"24\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": "\"Windows\"",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "cross-site",
+    "sec-gpc": "1",
+    "test_percent": "20",
+    "train_percent": "70",
+    "valid_percent": "10"
+    }
+
+    response = requests.get(url, headers=headers)
     return response.json()
 
 def main():
+    username = "alfred"
+    repository = "awp"
     folder = "./hcaptcha"
+    
     subfolders = [os.path.join(folder, dir) for dir in os.listdir(folder) if os.path.isdir(os.path.join(folder, dir))]
     print("Folders inside /hcaptcha:")
     for i, subfolder in enumerate(subfolders):
@@ -175,17 +179,18 @@ def main():
     selected_folders = [subfolders[int(folder)-1].strip() for folder in selected_folders.split(",")]
     for folder in selected_folders:
         images = [os.path.join(folder, file) for file in os.listdir(folder) if file.endswith(".png")]
-        for image in images:
-            upload_images_to_s3([image])
+        upload_images_to_s3(images, username, repository)
     print("Images uploaded successfully.")
     
     print("Take a look at the images and define some classes for the auto-labeling.")
     classes = input("Enter the classes separated by commas: ").split(",")
-    upload_classes(classes)
+    upload_classes(classes, username, repository)
     
     print("Classes uploaded successfully.")
     print("Starting auto-labeling...")
-    print(auto_label())
+    print(auto_label(username, repository))
+
+    #at some point we should check if the auto-labeling is done but idk how
 
 if __name__ == "__main__":
     main()
