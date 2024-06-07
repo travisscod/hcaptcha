@@ -111,10 +111,9 @@ def n(req):
     return hsl
 
 class HcaptchaImagesDownloader:
-    def __init__(self, host, sitekey, number):
-        self.host = host
-        self.sitekey = sitekey
-        self.number = number
+    def __init__(self):
+        self.host = 'discord.com'
+        self.sitekey = '4c672d35-0701-42b2-88c3-78380b0db560'
         self.counter = 1
         self.directory = os.getcwd()
         self.currentquestion = None
@@ -141,12 +140,14 @@ class HcaptchaImagesDownloader:
             url = captcha['datapoint_uri']
             urls.append(url)
 
-        for url in urls:
-            res = requests.get(url, stream=True).raw
-            image = np.asarray(bytearray(res.read()), dtype='uint8')
-            image = cv2.imdecode(image, cv2.IMREAD_COLOR)
-            self.save_image(self.currentquestion, image, self.number)
-
+        if urls:
+            for url in urls:
+                res = requests.get(url, stream=True).raw
+                image = np.asarray(bytearray(res.read()), dtype='uint8')
+                image = cv2.imdecode(image, cv2.IMREAD_COLOR)
+                self.save_image(self.currentquestion, image)
+            return
+        
     def get_captcha(self):
         data = {
             "sitekey": self.sitekey,
@@ -182,7 +183,7 @@ class HcaptchaImagesDownloader:
             return None
     
 
-    def save_image(self, question, image, number):
+    def save_image(self, question, image):
         folder = os.path.join(self.directory, 'hcaptcha', question)
         if not os.path.isdir(folder):
             os.mkdir(folder)
@@ -190,14 +191,3 @@ class HcaptchaImagesDownloader:
         cv2.imwrite(os.path.join(folder, 'image_' +
                     str(self.counter) + '.png'), image)
         self.counter += 1
-        if self.counter % 50 == 0:
-            print(f"Downloaded {self.counter} images")
-        if self.counter == number:
-            print("All images downloaded")
-            exit()
-
-if __name__ == '__main__':
-    number = int(input("Amount of challenges to scrape: "))
-    capdl = HcaptchaImagesDownloader('discord.com', '4c672d35-0701-42b2-88c3-78380b0db560', number)
-    while True:
-        capdl.download_images()
