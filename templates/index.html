@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Auto Labeling and Training</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        input[type="file"],
+        input[type="text"],
+        input[type="number"],
+        select {
+            display: block;
+            margin-bottom: 10px;
+            padding: 5px;
+            width: 100%;
+        }
+
+        button[type="submit"] {
+            background-color: #007bff;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 15px;
+            padding: 10px 20px;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        input[type="file"]::-webkit-file-upload-button {
+            background-color: #007bff;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 15px;
+            padding: 10px 20px;
+        }
+
+        input[type="file"]::-webkit-file-upload-button:hover {
+            background-color: #0056b3;
+        }
+
+        .wrapper {
+            margin: 0 auto;
+            max-width: 600px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #f44336;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <h1>Scrape HCaptcha Images</h1>
+        <form action="/start_scraping" method="post">
+            <button type="submit">Start Scraping</button>
+        </form>
+        <div class="alert" id="alertBox">{{ alert }}</div>
+    </div>
+
+    <script>
+        window.onload = function () {
+            var alertBox = document.getElementById('alertBox');
+            if (alertBox.innerHTML.trim() !== "") {
+                alertBox.classList.add('show');
+                setTimeout(function () {
+                    alertBox.classList.remove('show');
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+
+</html>
