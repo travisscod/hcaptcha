@@ -191,4 +191,3 @@ class HcaptchaImagesDownloader:
         cv2.imwrite(os.path.join(folder, 'image_' +
                     str(self.counter) + '.png'), image)
         self.counter += 1
-        

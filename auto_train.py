@@ -168,5 +168,3 @@ class DataUploader:
 
         response = requests.get(url, headers=headers)
         return response.json()
-
-
