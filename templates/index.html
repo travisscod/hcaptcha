@@ -79,6 +79,27 @@
         .alert.show {
             display: block;
         }
+
+        .image-container {
+            white-space: nowrap;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+        .image-container img {
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .repository {
+            margin-bottom: 20px;
+        }
+
+        .repository label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 
@@ -91,12 +112,17 @@
 
         <h1>Train model</h1>
         <form action="/train_model" method="post">
-            <select style="border-radius: 15px; border: 1px solid black;" name="options">
-                {% for option in options %}
-                <option value="{{ option }}">{{ option }}</option>
-                {% endfor %}
-            </select>
-            <input style="width: 588px; border-radius: 15px; border: 1px solid black; padding-left: 5px;" type="text" name="classes" placeholder="Enter label">
+            {% for repo in repositories %}
+                <div class="repository">
+                    <label for="{{ repo }}">Make classes for each Repository (splitted by comma): {{ repo }}</label>
+                    <div class="image-container">
+                        {% for img in images[repo] %}
+                            <img src="{{ img }}" alt="{{ repo }} Image">
+                        {% endfor %}
+                    </div>
+                    <input style="border-radius: 15px; border: 1px solid black; padding-left: 5px;" type="text" name="{{ repo }}" placeholder="Enter label for {{ repo }}">
+                </div>
+            {% endfor %}
             <button type="submit">Submit</button>
         </form>
         <div class="alert" id="alertBox">{{ alert }}</div>
