@@ -6,6 +6,7 @@ import os
 import random
 import requests
 import time
+import math
 
 app = Flask(__name__)
 
@@ -199,15 +200,15 @@ def start_scraping():
     try:
         username = "alfred"
         folder = "./hcaptcha"
-        """
         capdl = HcaptchaImagesDownloader()
-
-        for _ in range(5):
+        amount = int(request.form.get("number_of_captchas"))
+        amount = int(math.ceil(amount / 2))
+        for _ in range(amount):
             capdl.download_images()
         
-        """
+    
         repository_name = [os.path.basename(os.path.join(folder, dir)) for dir in os.listdir(folder) if os.path.isdir(os.path.join(folder, dir))]
-        """
+        
         subfolders = [os.path.join(folder, dir) for dir in os.listdir(folder) if os.path.isdir(os.path.join(folder, dir))]
         
         for folder in subfolders:
@@ -215,7 +216,7 @@ def start_scraping():
             images = [os.path.join(folder, file) for file in os.listdir(folder) if file.endswith(".png")]
             uploader = DataUploader(username, repository)
             uploader.upload_images_to_s3(images)
-        """
+        
         image_dict = {}
         for repository in repository_name:
             print(repository.replace(" ", "_"))
