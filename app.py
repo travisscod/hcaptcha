@@ -207,7 +207,8 @@ def start_scraping():
             capdl.download_images()
         
     
-        repository_name = [os.path.basename(os.path.join(folder, dir)) for dir in os.listdir(folder) if os.path.isdir(os.path.join(folder, dir))]
+        repository_name = [os.path.basename(os.path.join(folder, dir)).replace(" ", "_") for dir in os.listdir(folder) if os.path.isdir(os.path.join(folder, dir)) and dir.isalpha()]
+        print(repository_name)
         
         subfolders = [os.path.join(folder, dir) for dir in os.listdir(folder) if os.path.isdir(os.path.join(folder, dir))]
         
@@ -221,12 +222,14 @@ def start_scraping():
         for repository in repository_name:
             print(repository.replace(" ", "_"))
             images = get_images_from_repository(repository.replace(" ", "_"))
-            if len(images["presigned_urls"]) < 3:
-                random_img = images["presigned_urls"]
+            if "presigned_urls" in images and isinstance(images["presigned_urls"], list):
+                if len(images["presigned_urls"]) < 3:
+                    random_img = images["presigned_urls"]
+                else:
+                    random_img = random.sample(images["presigned_urls"], 3)
             else:
-                random_img = random.sample(images["presigned_urls"], 3)
-            image_dict[repository] = random_img
-
+                print("Error: 'presigned_urls' is not a valid key in 'images' or it's not a list.")
+        
         return render_template('index.html', alert="Scraping and uploading completed successfully", repositories=repository_name, images=image_dict)
     except Exception as e:
         print(f"An error occurred during the process: {e}")

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Scrape Status</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        .progress-container {
+            width: 100%;
+            background: #ddd;
+            border-radius: 50px;
+            padding: 10px;
+        }
+        .progress-bar {
+            height: 30px;
+            background-color: #007bff;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+            border-radius: 50px;
+            width: 0%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+    <script>
+    $(document).ready(function(){
+        function fetchCount() {
+            $.ajax({
+                url: '/count',
+                type: 'GET',
+                success: function(response) {
+                    var count = response.count;
+                    var total = 2000;
+                    var percent = (count / total) * 100;
+                    $('#count').text("Images scraped: " + count + " / " + total);
+                    $('.progress-bar').width(percent + '%');
+                    $('.progress-bar').text(count);
+                },
+                error: function(error) {
+                    console.log("Error:", error);
+                }
+            });
+        }
+        fetchCount();
+        setInterval(fetchCount, 500);
+    });
+    </script>
+</head>
+<body>
+    <h1>Image Scrape Status</h1>
+    <div class="progress-container">
+        <div class="progress-bar">0 / 2000</div>
+    </div>
+    <p id="count">Loading count...</p>
+</body>
+</html>
